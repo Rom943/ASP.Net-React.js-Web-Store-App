@@ -10,6 +10,6 @@ namespace ShopApi.DTO
         public string Password { get; set; } = string.Empty;
         public IFormFile? ImageFile { get; set; } = null;
         public UserType UserType { get; set; }
-        public DateTime? DOB { get; set; }
+        public DateTime? Dob { get; set; }
     };
 }

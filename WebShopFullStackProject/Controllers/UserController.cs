@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using ShopApi.Models;
 using ShopApi.Repositories.IRepositories;
 using ShopApi.DTO;
+using Microsoft.EntityFrameworkCore;
 
 namespace ShopApi.Controllers
 {
@@ -42,10 +43,20 @@ namespace ShopApi.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public IActionResult GetByID(int id)
+        public async Task<ActionResult> GetByID(int id)
         {
-            var result = _userRepo.FindByCondition(u => u.ID == id).FirstOrDefault();
-            return Ok(result);
+            var result = await _userRepo.FindByCondition(u => u.ID == id).FirstOrDefaultAsync();
+
+            var userDTO = new GetUserDTO
+            {
+                FirstName = result.FirstName,
+                LastName = result.LastName,
+                Email = result.Email,
+                DOB = result.DOB,
+                ProfileImageSRC= _imageService.GetSingleImageSRC("Users",result.FirstName,result.ProfileImageName)
+            };
+
+            return Ok(userDTO);
         }
 
         [HttpPost]
@@ -54,7 +65,7 @@ namespace ShopApi.Controllers
         {
             if (userDTO == null)
             {
-                return BadRequest();
+                return BadRequest(userDTO);
             }
 
             var newUser = new User
@@ -64,7 +75,7 @@ namespace ShopApi.Controllers
                 Password = userDTO.Password,
                 Email = userDTO.Email,
                 UserType = userDTO.UserType,
-                DOB = userDTO.DOB,
+                DOB = userDTO.Dob,
                 ProfileImageName = _imageService.ImageSaveHandler("users",userDTO.FirstName,false,userDTO.ImageFile,null)
 
             };
@@ -85,9 +96,9 @@ namespace ShopApi.Controllers
                     break;
             }
              await _userRepo.Create(newUser);
+            
 
-
-            return Ok();
+            return Ok(newUser.ID);
         }
 
         [HttpPut]
@@ -123,19 +134,8 @@ namespace ShopApi.Controllers
             return NoContent();
         }
 
-        [NonAction]
-        public async Task<string> SaveImage(IFormFile imageFile , string firstName)
-        {
-            string imageName =new string (Path.GetFileNameWithoutExtension(imageFile.FileName).Take(10).ToArray()).Replace(' ', '-');
-            imageName = imageName + DateTime.Now.ToString("yymmssfff") + Path.GetExtension(imageFile.FileName);
-            System.IO.Directory.CreateDirectory(_hostEnvironment.ContentRootPath +$"\\Images\\Users\\{firstName}");
-            var imagePath = Path.Combine(_hostEnvironment.ContentRootPath, $"Images\\Users\\{firstName}", imageName);
-            using (var fileStream = new FileStream(imagePath, FileMode.Create))
-            {
-                await imageFile.CopyToAsync(fileStream);
-            }
-            return imageName;
-        }
+
+
 
 
 

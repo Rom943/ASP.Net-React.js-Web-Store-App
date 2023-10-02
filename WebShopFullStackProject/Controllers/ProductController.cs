@@ -15,77 +15,130 @@ namespace ShopApi.Controllers
         private readonly IWebHostEnvironment _hostEnvironment;
         private readonly ICategoryRepository _categoryRepository;
         private readonly ISellerRepository _sellerRepository;
+        private readonly IImageService _imageService;
+        private readonly IReviewRepository _reviewRepository;
+
 
         public ProductController (IProductRepository _productRepository,
             IWebHostEnvironment _hostEnvironment,
             ICategoryRepository _categoryRepository,
-            ISellerRepository _sellerRepository)
+            ISellerRepository _sellerRepository,
+            IImageService _imageService,
+            IReviewRepository _reviewRepository)
         {
             this._productRepository = _productRepository;
             this._hostEnvironment = _hostEnvironment;
             this._categoryRepository = _categoryRepository;
             this._sellerRepository = _sellerRepository;
+            this._imageService = _imageService;
+            this._reviewRepository = _reviewRepository;
         }
 
-        [HttpPost("seller/{sellerId:int}")]
-        public async Task<IActionResult> CreateProduct([FromForm]CreateProductDTO product,int sellerId)
+        [HttpGet("categories/products")]
+        public async Task<ActionResult> GetAllProductsByCategories()
         {
+            var categories = _categoryRepository.FindAll().Include(c => c.Products).ToList();
+            List<GetCategoryListDTO> categoryList = new List<GetCategoryListDTO>();
+            foreach (var category in categories)
+            {
+                var products =await _productRepository.FindByCondition(p => p.Category.ID == category.ID).Include(p => p.Category).ToListAsync();
+                List<GetProductDTO> productsList = new List<GetProductDTO>();
+                foreach(var product in products)
+                {
+                    var productDTO = new GetProductDTO 
+                    {
+                        ID = product.ID,
+                        ProductName= product.ProductName,
+                        ProductDescription= product.ProductDescription,
+                        Price= product.Price,
+                        Rank= product.Rank,
+                        Stock= product.Stock,
+                        Category=product.Category.CategoryName,
+                        ThumbnailImgSRC=_imageService.GetSingleImageSRC("products",product.ProductName,product.ThumbnailImgName),
+                        ProductGallerySRC=_imageService.GetMultiImageSRC("products",product.ProductName,product.ProductGalleryName)
+                    };
+                    productsList.Add(productDTO);
+                }
+                var categoryListDTO = new GetCategoryListDTO
+                {
+                    ID = category.ID,
+                    CategoryName = category.CategoryName,
+                    CategoryDescription = category.CategoryDescription,
+                    ImageSRC = _imageService.GetSingleImageSRC("categories", category.CategoryName, category.ImageName),
+                    ProductCunt = productsList.Count(),
+                    ProductList = productsList.ToArray()                    
+                };
+                categoryList.Add(categoryListDTO);
+            }
+            return Ok(categoryList.ToArray());
+        }
+
+        [HttpGet("id/{productId:int}")]
+        public async Task<ActionResult> GetProductById(int productId)
+        {
+            var product =await _productRepository.FindByCondition(p => p.ID == productId).Include(p => p.Reviews).Include(p => p.Category).Include(p => p.Seller).FirstOrDefaultAsync();
             if (product == null)
             {
-                return BadRequest();
+                return NotFound();
             }
+            var relatedProducts =await _productRepository.FindByCondition(r => r.Category.ID == product.Category.ID).Include(r => r.Category).ToListAsync();
 
-            var category = await _categoryRepository.FindByCondition(c => c.ID == product.CategoryId).Include(c=>c.Products).FirstOrDefaultAsync();
-            var seller = await _sellerRepository.FindByCondition(s => s.ID == sellerId).Include(s=>s.Products).FirstOrDefaultAsync();
-
-            var newProduct = new Product
+            List<GetProductDTO> RelatedList = new List<GetProductDTO>();
+            foreach (var item in relatedProducts)
             {
+                var relatedProduct = new GetProductDTO
+                {
+                    ID= item.ID,
+                    ProductName= item.ProductName,
+                    ProductDescription = item.ProductDescription,
+                    Price = item.Price,
+                    Rank= item.Rank,
+                    Stock= item.Stock,
+                    Category=item.Category.CategoryName,
+                    ThumbnailImgSRC=_imageService.GetSingleImageSRC("products",item.ProductName,item.ThumbnailImgName),
+                    ProductGallerySRC=_imageService.GetMultiImageSRC("products",item.ProductName,item.ProductGalleryName)
+                };
+                RelatedList.Add(relatedProduct);
+            };
+            var reviews = await _reviewRepository.FindByCondition(r => r.Product.ID == product.ID).Include(r => r.Customer.User).ToListAsync();
+            List<GetCustomerReviewsDTO> reviewList = new List<GetCustomerReviewsDTO>();
+            foreach (var item in reviews)
+            {
+                string formattedDate= item.Date.ToString("dd.MM.yyyy"); 
+
+                var review = new GetCustomerReviewsDTO
+                {
+                    ProductId=item.ID,
+                    ProductName=item.Product.ProductName,
+                    ReviewText=item.ReviewText,
+                    Rank=item.Rank,
+                    Date= formattedDate,
+                    ReviewerImgSRC=_imageService.GetSingleImageSRC("Users",item.Customer.User.FirstName,item.Customer.User.ProfileImageName),
+                    ReviewerName = item.Customer.User.FirstName,
+                    ShipingAddress = item.Customer.ShipingAddress,
+                };
+
+                reviewList.Add(review);
+            }
+            var productDTO = new GetProductByIdDTO
+            {
+                ProductId = productId,
                 ProductName = product.ProductName,
-                ProductDescription = product.ProductDescription,
-                Price = product.Price,
-                Stock = product.Stock,
-                ThumbnailImgName = product.ThumbnailImgFile != null && product.ProductName != null ? await SaveImage(product.ThumbnailImgFile, product.ProductName) : null,
-                ProductGalleryName = product.ProductGallery != null && product.ProductName != null ? await SaveImages(product.ProductGallery, product.ProductName) : null,
-                Category = category,
-                Seller = seller
-                
+                ProductDescription= product.ProductDescription, 
+                Price= product.Price,
+                Rank= product.Rank,
+                Stock= product.Stock,
+                CategoryName=product.Category.CategoryName,
+                ThumbnailImgSRC=_imageService.GetSingleImageSRC("products",product.ProductName,product.ThumbnailImgName),
+                ProductGallerySRC=_imageService.GetMultiImageSRC("products",product.ProductName,product.ProductGalleryName),
+                RelatedProducts=RelatedList.ToArray(),
+                ReviewList=reviewList.ToArray(),
+                StoreName=product.Seller.StoreName,
+                StoreImgSRC=_imageService.GetSingleImageSRC("sellers",product.Seller.StoreName,product.Seller.StoresImgName)
             };
 
 
-            var result = await _productRepository.Create(newProduct);
-
-            return Created("product",product);
-        } 
-
-        [NonAction]
-        public async Task<string> SaveImage(IFormFile imageFile, string productName)
-        {
-            string imageName = new string(Path.GetFileNameWithoutExtension(imageFile.FileName).Take(10).ToArray()).Replace(' ', '-');
-            imageName = imageName + DateTime.Now.ToString("yymmssfff") + Path.GetExtension(imageFile.FileName);
-            System.IO.Directory.CreateDirectory(_hostEnvironment.ContentRootPath +$"\\Images\\products\\{productName}\\thumbnail");
-            var imagePath = Path.Combine(_hostEnvironment.ContentRootPath,"Images\\products",productName,"thumbnail", imageName);
-            using (var fileStream = new FileStream(imagePath, FileMode.Create))
-            {
-                await imageFile.CopyToAsync(fileStream);
-            }
-            return imageName;
-        }
-
-        [NonAction]
-        public async Task<string> SaveImages(IFormFileCollection fileCollection, string productName)
-        {
-            string galleryName = productName + DateTime.Now.ToString("yymmssfff")+"Gallery";
-            System.IO.Directory.CreateDirectory(_hostEnvironment.ContentRootPath + $"\\Images\\products\\{productName}\\{galleryName}");
-            foreach (var file in fileCollection)
-            {
-                var imagePath = Path.Combine(_hostEnvironment.ContentRootPath, $"Images\\products\\{productName}\\{galleryName}", file.FileName);
-                using (var fileStream = new FileStream(imagePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(fileStream);
-                }
-            }
-
-            return galleryName;
+            return Ok(productDTO);
         }
     }
 }

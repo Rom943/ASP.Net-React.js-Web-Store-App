@@ -92,7 +92,7 @@ namespace ShopApi.Controllers
                     reviewsDto.Add(reviewDTO);
                 }
             }
-            
+            var purchases =await _purchaseRepo.FindByCondition(p=>p.Customer.ID==customer.ID).Include(p=>p.Product).ToListAsync();
             var purchasesDTO = new List<GetCustomerPurchasesDTO>();
             if(customer.Purchases != null)
             {
@@ -200,7 +200,7 @@ namespace ShopApi.Controllers
         [HttpGet("{customerId:int}/purchases")]
         public async Task<ActionResult> GetAllCustomerPurchases(int customerId)
         {
-            var purchases = await _purchaseRepo.FindByCondition(p=>p.Customer.ID==customerId).Include(p=>p.Product).ToListAsync();
+            var purchases = await _purchaseRepo.FindByCondition(p=>p.Customer.ID==customerId).Include(p=>p.Product).Include(p=>p.Product.Seller).ToListAsync();
             var purchasesDTO = new List<GetCustomerPurchasesDTO>();
             if (purchases != null)
             {
@@ -352,6 +352,21 @@ namespace ShopApi.Controllers
             _productRepo.Update(product);
             return Ok();
         }
+
+        [HttpPut("{customerId:int}/update")]
+        public async Task <ActionResult> UpdateCustomer(int customerId, string address)
+        {
+            var customer = await _customerRepo.FindByCondition(c => c.ID == customerId).FirstOrDefaultAsync();
+            if(customer==null) 
+            {
+                return NotFound(); 
+            }
+            customer.ShipingAddress= address;
+            _customerRepo.Update(customer);
+            return Ok();
+        }
+
+    
     }
 
 }
