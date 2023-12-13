@@ -5,9 +5,12 @@ using ShopApi.Models;
 using ShopApi.DTO;
 using ShopApi.Repositories.IRepositories;
 using Microsoft.Identity.Client;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ShopApi.Controllers
 {
+    ////[Authorize]
+    ////[Authorize(Policy = "CutomerOnly")]
     [ApiController]
     [Route("api/[controller]")]
     public class CustomerController : Controller
@@ -18,13 +21,15 @@ namespace ShopApi.Controllers
         private readonly IProductRepository _productRepo;
         private readonly IReviewRepository _reviewRepo;
         private readonly IImageService _imageService;
+        private readonly IImageRepository _imageRepository;
 
         public CustomerController(ICartRepository _cartRepo,
             ICustomerRepository _customerRepo,
             IPurchaseRepository _purchaseRepo,
             IProductRepository _productRepo,
             IReviewRepository _reviewRepo,
-            IImageService _imageService)
+            IImageService _imageService,
+            IImageRepository _imageRepository)
         {
             this._cartRepo = _cartRepo ?? throw new ArgumentNullException(nameof(_cartRepo)); 
             this._customerRepo = _customerRepo ?? throw new ArgumentNullException(nameof(_customerRepo)); ;
@@ -32,6 +37,7 @@ namespace ShopApi.Controllers
             this._productRepo = _productRepo ?? throw new ArgumentNullException(nameof(_productRepo));
             this._reviewRepo = _reviewRepo ?? throw new ArgumentNullException(nameof(_reviewRepo));
             this._imageService = _imageService ?? throw new ArgumentNullException( nameof(_imageService));
+            this._imageRepository = _imageRepository ?? throw new ArgumentNullException(nameof(_imageRepository));
         }
 
         /// <summary>
@@ -40,7 +46,6 @@ namespace ShopApi.Controllers
         /// <param name="id"></param>
         /// <returns>Customer initial data</returns>
         [HttpGet("{id:int}")]
-
         public async Task<ActionResult<Customer>> GetCustomerByID (int id)
         {
             var customer = await _customerRepo
@@ -48,7 +53,7 @@ namespace ShopApi.Controllers
                 .Include(c=>c.Cart.Products)
                 .Include(r=>r.Reviews)
                 .Include(c=>c.Purchases)
-                .FirstOrDefaultAsync(c=>c.ID==id);
+                .FirstOrDefaultAsync();
             if(customer == null)
             {
                 return BadRequest();
@@ -64,19 +69,21 @@ namespace ShopApi.Controllers
             {
                 foreach (var product in customer.Cart.Products)
                 {
-
+                    var img = await _imageRepository.FindByCondition(i=>i.ID == product.TbnImgId).FirstOrDefaultAsync();
                     var newProductDTO = new GetProductToCartDTO
                     {
                         ID = product.ID,
                         ProductName = product.ProductName,
-                        Price= product.Price,
-                        Stock= product.Stock,
-                        ThumbnailImgSrc = _imageService.GetSingleImageSRC("products",product.ProductName,product.ThumbnailImgName)
+                        Price = product.Price,
+                        Stock = product.Stock,
+                        ThumbnailImgSrc = img != null ? _imageService.GetSingleImageSRC(img, product.ID) : string.Empty
                     };
                     productsDTO.Add(newProductDTO);
                 }
             }
-            var reviews = await _reviewRepo.FindByCondition(r => r.Customer.ID == id).Include(r=>r.Product).ToListAsync();
+            var reviews = await _reviewRepo.FindByCondition(r => r.Customer.ID == id)
+                .Include(i=>i.Product.TbnImg)
+                .Include(r=>r.Product).ToListAsync();
             var reviewsDto = new List<GetCustomerReviewsDTO>();
             if(reviews != null) 
             {
@@ -87,12 +94,15 @@ namespace ShopApi.Controllers
                         ReviewText = review.ReviewText,
                         Rank = review.Rank,
                         ProductName = review.Product.ProductName,
-                        ProductId = review.Product.ID
+                        ProductId = review.Product.ID,
+                        ProductImgSrc = review.Product.TbnImg != null ? _imageService.GetSingleImageSRC(review.Product.TbnImg, review.Product.ID) : string.Empty
                     };
                     reviewsDto.Add(reviewDTO);
                 }
             }
-            var purchases =await _purchaseRepo.FindByCondition(p=>p.Customer.ID==customer.ID).Include(p=>p.Product).ToListAsync();
+            var purchases =await _purchaseRepo.FindByCondition(p=>p.Customer.ID==customer.ID)
+                .Include(p=>p.Product)
+                .Include(i=>i.Product.TbnImg).ToListAsync();
             var purchasesDTO = new List<GetCustomerPurchasesDTO>();
             if(customer.Purchases != null)
             {
@@ -102,14 +112,15 @@ namespace ShopApi.Controllers
                     {
                         ProductId = purchase.Product.ID,
                         ProductName = purchase.Product.ProductName,
-                        Date = purchase.Date,
-                        TotalPrice = purchase.TotalPrice
+                        Date = purchase.Date.ToString(),
+                        TotalPrice = purchase.TotalPrice,
+                        ProductImgSrc = purchase.Product.TbnImg != null ? _imageService.GetSingleImageSRC(purchase.Product.TbnImg,purchase.Product.ID) : string.Empty
                     };
                     purchasesDTO.Add(purchaseDTO);
                 }
             }
             
-            var cartDto = new CustomerCartDTO { Id = customer.Cart.ID,Products=productsDTO };
+            var cartDto = new CustomerCartDTO { Id = customer.Cart.ID,Products=productsDTO.ToArray() };
            
 
             var customerDTO = new CustomerGetDTO
@@ -117,8 +128,8 @@ namespace ShopApi.Controllers
                 Id = customer.ID,
                 ShipingAddress = customer.ShipingAddress,
                 Cart = cartDto,
-                Reviews = reviewsDto,
-                Purchases = purchasesDTO
+                Reviews = reviewsDto.ToArray(),
+                Purchases = purchasesDTO.ToArray(),
             };
 
             return Ok(customerDTO);
@@ -132,7 +143,8 @@ namespace ShopApi.Controllers
         [HttpGet("{customerId:int}/cart")]
         public async Task<ActionResult> GetCustomerCartById(int customerId)
         {
-            var cart = await _cartRepo.FindByCondition(c => c.Customer.ID == customerId).Include(c => c.Products).FirstOrDefaultAsync();
+            var cart = await _cartRepo.FindByCondition(c => c.Customer.ID == customerId)                
+                .Include(c => c.Products).FirstOrDefaultAsync();
             if(cart == null)
             {
                 return NotFound();
@@ -142,19 +154,14 @@ namespace ShopApi.Controllers
             {
                 foreach (var product in cart.Products)
                 {
-
+                    var img =await _imageRepository.FindByCondition(i=>i.ID == product.TbnImgId).FirstOrDefaultAsync();
                     var newProductDTO = new GetProductToCartDTO
                     {
                         ID = product.ID,
                         ProductName = product.ProductName,
                         Price = product.Price,
                         Stock = product.Stock,
-                        ThumbnailImgSrc =
-                        String.Format("{0}://{1}{2}/Images/products/{3}/thumbnail/{4}",
-                        Request.Scheme,
-                        Request.Host, Request.PathBase,
-                        product.ProductName,
-                        product.ThumbnailImgName)
+                        ThumbnailImgSrc = img != null ? _imageService.GetSingleImageSRC(img, product.ID) : string.Empty
                     };
                     productsDTO.Add(newProductDTO);
                 }
@@ -210,7 +217,7 @@ namespace ShopApi.Controllers
                     {
                         ProductId = purchase.Product.ID,
                         ProductName = purchase.Product.ProductName,
-                        Date = purchase.Date,
+                        Date = purchase.Date.ToString(),
                         TotalPrice = purchase.TotalPrice,
                         SellerName = purchase.Product.Seller.StoreName
                     };
@@ -290,7 +297,7 @@ namespace ShopApi.Controllers
         /// <param name="review"></param>
         /// <returns>STATUS 200</returns>
         [HttpPost("review/product/{productId:int}/customer/{customerId:int}")]
-        public async Task<ActionResult<Review>> AddReviewToProduct(int productId, int customerId, [FromForm] CreateReviewDTO review)
+        public async Task<ActionResult<Review>> AddReviewToProduct(int productId, int customerId, CreateReviewDTO review)
         {
             var customer =await _customerRepo.FindByCondition(c => c.ID == customerId).Include(c => c.Reviews).FirstOrDefaultAsync();
             if(customer == null)
@@ -334,6 +341,7 @@ namespace ShopApi.Controllers
         /// <param name="productId"></param>
         /// <param name="customerId"></param>
         /// <returns>STATUS 200</returns>
+
         [HttpPost("purchase/product/{productId:int}/customer/{customerId:int}")]
         public async Task<ActionResult<Purchase>> PurchaseProduct(int productId, int customerId)
         {
@@ -353,14 +361,22 @@ namespace ShopApi.Controllers
             return Ok();
         }
 
+
+        /// <summary>
+        /// Updates the shipping address for a customer.
+        /// </summary>
+        /// <param name="customerId">The ID of the customer to update.</param>
+        /// <param name="address">The new shipping address.</param>
+        /// <returns>Returns 200 OK if the update is successful, 404 Not Found if the customer is not found.</returns>
         [HttpPut("{customerId:int}/update")]
-        public async Task <ActionResult> UpdateCustomer(int customerId, string address)
+        public async Task <ActionResult> UpdateCustomer(int customerId,[FromForm]string address)
         {
             var customer = await _customerRepo.FindByCondition(c => c.ID == customerId).FirstOrDefaultAsync();
             if(customer==null) 
             {
                 return NotFound(); 
             }
+
             customer.ShipingAddress= address;
             _customerRepo.Update(customer);
             return Ok();

@@ -5,8 +5,12 @@ namespace ShopApi.Repositories.IRepositories
 {
     public interface IImageService
     {
-        string GetSingleImageSRC(string RealatedTo, string name, string imgName);
-        string [] GetMultiImageSRC(string RealatedTo, string name, string GalleryName);
-        string ImageSaveHandler(string RelatedTo, string objectName, bool multi, IFormFile? singelImg, IFormFileCollection? multiImgs);
+        string GetSingleImageSRC(Image img,int relatedId);
+        string[] GetMultiImageSRC(ImageGallery gallery, int relatedId);
+        Task ImageSaveHandler(string relatedTo, int relatedId, IFormFile imgFile);
+        Task GallerySaveHandler(string relatedTo, int relatedId, IFormFileCollection imgFile);
+        void DeleteImage(int imgID, int relatedId);
+        void DeleteGallery(int galleryID, int relatedId);
+
     }
 }

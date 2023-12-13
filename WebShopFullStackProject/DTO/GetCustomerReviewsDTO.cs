@@ -10,7 +10,7 @@
         public string ReviewerImgSRC { get; set; } = string.Empty;
         public string ReviewerName { get; set; } = string.Empty;
         public string ShipingAddress { get; set; } = string.Empty;
-        
+        public string ProductImgSrc { get; set; } = string.Empty;
         
     }
 }

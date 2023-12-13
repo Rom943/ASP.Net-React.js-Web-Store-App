@@ -19,11 +19,12 @@ namespace ShopApi.Models
         [Required]
         public string Password { get; set; }
         [Required]
-        public string Email { get; set; }
+        public string Email { get; set; } 
         public DateTime? DOB { get; set; }
         [Required]
-        public UserType UserType { get; set; } 
-        public string ProfileImageName { get; set; }
+        public UserType UserType { get; set; }
+        public int? TbnImgId { get; set; } 
+        public Image? TbnImg { get; set; } 
         public Customer Customer { get; set; }
         public Seller Seller { get; set; }
         public SiteManager SiteManager { get; set; }

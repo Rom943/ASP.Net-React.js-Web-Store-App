@@ -13,12 +13,10 @@ namespace ShopApi.Models
         public double Price { get; set; } = 0;
         public double Rank { get; set; } = 0;
         public int Stock { get; set; } = 0;
-        public string? ThumbnailImgName { get; set; } = null;
-        [NotMapped]
-        public IFormFile? ThumbnailImgFile { get; set; } = null;
-        public string? ProductGalleryName { get; set; }= null;
-        [NotMapped]
-        public IFormFileCollection? ProductGallery { get; set; }=null;
+        public int? TbnImgId { get; set; }
+        public Image? TbnImg { get; set; }
+        public int? GalleryId { get; set; }
+        public ImageGallery? Gallery { get; set; }
         public List<Review>? Reviews { get; set; }
         public Seller? Seller { get; set; } 
         public List<Purchase>? Purchases { get; set; } = null;

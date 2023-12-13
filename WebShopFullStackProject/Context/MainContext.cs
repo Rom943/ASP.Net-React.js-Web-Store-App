@@ -6,7 +6,11 @@ namespace ShopApi.Context
 {
     public class MainContext:DbContext
     {
-        public MainContext(DbContextOptions<MainContext> _options) : base(_options) { }
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        public MainContext(DbContextOptions<MainContext> _options, IWebHostEnvironment _webHostEnvironment) : base(_options) {
+            this._webHostEnvironment = _webHostEnvironment;
+            Initialize();
+        }
 
         public DbSet<User> User { get; set; }
         public DbSet<Product> Products { get; set; }
@@ -17,26 +21,50 @@ namespace ShopApi.Context
         public DbSet<Review> Reveiws { set; get; }
         public DbSet<Purchase> Purchases { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<Image> Images { get; set; }
+        public DbSet<ImageGallery> ImageGalleries { get; set; }
+        public DbSet<SeedingInfo> SeedingInfo { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        private string ReadSqlScript()
         {
-            base.OnModelCreating(modelBuilder);
+            string filePath = Path.Combine(_webHostEnvironment.ContentRootPath, "seedingData", "seedScript.sql");
+            string sqlScript = File.ReadAllText(filePath);
 
+            // Remove GO statements
+            sqlScript = sqlScript.Replace("GO", "");
 
-            modelBuilder.Entity<User>().HasData(
-                new User 
-                {
-                    ID=1,
-                    FirstName = "Roma",
-                    LastName = "Alexeichick",
-                    Password = "Password",
-                    Email = "roma19943@gmail.com",
-                    DOB= DateTime.Now,
-                    UserType = UserType.Admin
-                });
-
+            return sqlScript;
         }
 
-        
+        private void SeedData()
+        {
+            // Check if seeding info exists
+            var seedingInfo = SeedingInfo.FirstOrDefault();
+            if (seedingInfo == null || !seedingInfo.IsSeedingDone)
+            {
+                string sqlScript = ReadSqlScript();
+                Database.ExecuteSqlRaw(sqlScript);
+
+                // Mark seeding as done
+                if (seedingInfo == null)
+                {
+                    SeedingInfo.Add(new SeedingInfo { IsSeedingDone = true });
+                }
+                else
+                {
+                    seedingInfo.IsSeedingDone = true;
+                    Entry(seedingInfo).State = EntityState.Modified;
+                }
+
+                SaveChanges();
+            }
+        }
+
+        public void Initialize()
+        {
+            Database.EnsureCreated();
+            SeedData();
+        }
     }
 }
+

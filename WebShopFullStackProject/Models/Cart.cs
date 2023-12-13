@@ -6,7 +6,6 @@ namespace ShopApi.Models
 {
     public class Cart
     {
-        [Key]
         public int ID { get; set; }
         public List<Product>? Products { get; set; } 
         public int CustomerId { get; set; }

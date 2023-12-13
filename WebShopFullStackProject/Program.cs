@@ -29,6 +29,8 @@ internal class Program
         builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
         builder.Services.AddScoped<IImageService, ImageService>();
         builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+        builder.Services.AddScoped<IImageRepository, ImageRepository>();
+        builder.Services.AddScoped<IImageGalleryRepository, ImageGalleryRepository>();
 
         builder.Services.AddHttpContextAccessor();
 
@@ -96,10 +98,11 @@ internal class Program
         using (var scope = app.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<MainContext>();
-            context.Database.Migrate();
+            //context.Database.Migrate();
+            //context.Initialize();
         }
 
-        // Configure the HTTP request pipeline.
+
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();

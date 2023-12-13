@@ -12,7 +12,8 @@ namespace ShopApi.Models
         public string? CategoryDescription { get; set;}=string.Empty;
         public List<Product>? Products { get; set; } = null;
         public SiteManager? SiteManager { get; set; } = null;
-        public string? ImageName { get; set; }= string.Empty;
+        public int? TbnImgId { get; set; }
+        public Image? TbnImg { get; set; }
 
 
     }
