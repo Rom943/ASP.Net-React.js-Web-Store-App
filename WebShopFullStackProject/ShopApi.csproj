@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+	  <RootNamespace>Api</RootNamespace>
+	  <AssemblyName>Api</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
