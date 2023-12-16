@@ -84,6 +84,7 @@ namespace ShopApi.Controllers
         /// </summary>
         /// <param name="id">The ID of the user to retrieve.</param>
         /// <returns>Returns details of the specified user.</returns>
+        [Authorize]
         [HttpGet("{id:int}")]
         public async Task<ActionResult> GetByID(int id)
         {
@@ -172,6 +173,7 @@ namespace ShopApi.Controllers
         /// <param name="userID">The ID of the user to update.</param>
         /// <param name="userDTO">The updated user details.</param>
         /// <returns>Returns Ok if the operation is successful.</returns>
+        [Authorize]
         [HttpPut("update/user/{userID:int}")]
         public async Task<ActionResult> Update(int userID, [FromForm] UserUpdateDto userDTO)
         {
@@ -200,6 +202,7 @@ namespace ShopApi.Controllers
         /// </summary>
         /// <param name="userID">The ID of the user to delete.</param>
         /// <returns>Returns Ok if the operation is successful.</returns>
+        [Authorize]
         [HttpDelete("delete/user/{userID:int}")]
         public async Task<ActionResult> Delete(int userID)
         {
