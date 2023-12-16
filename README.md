@@ -90,29 +90,29 @@ Sellers showcase their products, and customers can explore, purchase, and provid
 
 # Usage:
 ## User:
-Customers and sellers are both associated with the User table in a one-to-one relationship.
-During registration, users can select their user type (customer, seller).
-After submission, based on the user type selection, additional details are required:
-Sellers need to add store names and upload store profile images.
-Customers need to add shipping addresses.
-Upon logging in, the website loads user-specific data and functionalities.
-Click the user icon on the top-left corner to access the user profile.
-User details can be modified in the user profile tab by clicking the "Edit User Profile" button.
-To log out, click on log-out.
+1. Customers and sellers are both associated with the User table in a one-to-one relationship.
+2. During registration, users can select their user type (customer, seller).
+3. After submission, based on the user type selection, additional details are required:
+4. Sellers need to add store names and upload store profile images.
+5. Customers need to add shipping addresses.
+6. Upon logging in, the website loads user-specific data and functionalities.
+7. Click the user icon on the top-left corner to access the user profile.
+8. User details can be modified in the user profile tab by clicking the "Edit User Profile" button.
+9. To log out, click on log-out.
 
 ## Sellers:
-Edit store details in the user profile tab.
-Add or edit products in the user bar => user activity tab => Product Stock tab.
-Access sales data: user activity tab => Sold Product tab.
-Access product reviews: user activity tab => Rated Products tab.
-Sellers cannot purchase or review products.
+1. Edit store details in the user profile tab.
+2. Add or edit products in the user bar => user activity tab => Product Stock tab.
+3. Access sales data: user activity tab => Sold Product tab.
+4. Access product reviews: user activity tab => Rated Products tab.
+5. Sellers cannot purchase or review products.
 
 ## Customers:
-Access product reviews: user activity tab => Products Reviewed tab.
-Access purchase history: user activity tab => Purchases tab.
-Make purchases: The product stock quantity decreases after each purchase.
-Add products to the cart: Products can be purchased or removed from the cart.
-Leave reviews: On the product page, leave a review and rate the product from 0 to 5 stars. The product rank will be recalculated after each review.
+1. Access product reviews: user activity tab => Products Reviewed tab.
+2. Access purchase history: user activity tab => Purchases tab.
+3. Make purchases: The product stock quantity decreases after each purchase.
+4. Add products to the cart: Products can be purchased or removed from the cart.
+5. Leave reviews: On the product page, leave a review and rate the product from 0 to 5 stars. The product rank will be recalculated after each review.
 
 
 ## hope you injoy this project as much as i building it.
