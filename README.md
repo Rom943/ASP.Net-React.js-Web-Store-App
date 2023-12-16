@@ -86,7 +86,7 @@ Sellers showcase their products, and customers can explore, purchase, and provid
 3. Start the frontend application: npm start
 4. Access the Application:
 
-# Open your web browser and visit http://localhost:3000 to experience the application.
+ Open your web browser and visit http://localhost:3000 to experience the application.
 
 ## Usage:
 # User:
