@@ -88,8 +88,8 @@ Sellers showcase their products, and customers can explore, purchase, and provid
 
  Open your web browser and visit http://localhost:3000 to experience the application.
 
-## Usage:
-# User:
+# Usage:
+## User:
 Customers and sellers are both associated with the User table in a one-to-one relationship.
 During registration, users can select their user type (customer, seller).
 After submission, based on the user type selection, additional details are required:
@@ -100,14 +100,14 @@ Click the user icon on the top-left corner to access the user profile.
 User details can be modified in the user profile tab by clicking the "Edit User Profile" button.
 To log out, click on log-out.
 
-# Sellers:
+## Sellers:
 Edit store details in the user profile tab.
 Add or edit products in the user bar => user activity tab => Product Stock tab.
 Access sales data: user activity tab => Sold Product tab.
 Access product reviews: user activity tab => Rated Products tab.
 Sellers cannot purchase or review products.
 
-# Customers:
+## Customers:
 Access product reviews: user activity tab => Products Reviewed tab.
 Access purchase history: user activity tab => Purchases tab.
 Make purchases: The product stock quantity decreases after each purchase.
