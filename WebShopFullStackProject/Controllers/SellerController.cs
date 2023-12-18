@@ -15,8 +15,8 @@ namespace ShopApi.Controllers
     /// <summary>
     /// Controller for managing sellers and related operations.
     /// </summary>
-    [Authorize]
-    [Authorize(Policy = "SellerOnly")]
+    //[Authorize]
+    //[Authorize(Policy = "SellerOnly")]
     [ApiController]
     [Route("api/[controller]")]
     public class SellerController : Controller
@@ -298,6 +298,68 @@ namespace ShopApi.Controllers
             _sellerRepository.Update(seller);
 
             return Ok();
+        }
+
+        [HttpDelete("product/delete/{productId:int}/{sellerId:int}")]
+        public async Task<ActionResult> DeleteProduct(int productId,int sellerId)
+        {
+            var product =await _productRepository.FindByCondition(p => p.ID == productId)
+                .Include(r=>r.Reviews)
+                .Include(p=>p.Purchases)
+                .Include(i=>i.TbnImg)
+                .Include(g=>g.Gallery)
+                .FirstOrDefaultAsync();
+            var seller = await _sellerRepository.FindByCondition(s => s.ID == sellerId).Include(p=>p.Products).FirstOrDefaultAsync();
+            if(seller == null)
+            {
+                return NotFound("seller not found");
+            }
+            if (seller.Products==null)
+            {
+                return NotFound("seller has no products");
+            }
+            if(product == null)
+            {
+                return NotFound("product not found");
+            }
+
+            if (seller.Products.Contains(product))
+            {
+                
+                List<Review> reviews =await _reviewRepository.FindByCondition(r => r.Product.ID == product.ID).Include(p => p.Product).ToListAsync();
+                if (reviews.Count > 0)
+                {
+                    foreach (Review review in reviews)
+                    {
+                        _reviewRepository.Delete(review);
+                    }
+                }
+                List<Purchase> purchases =await _purchaseRepository.FindByCondition(p=>p.Product.ID == product.ID).Include(P=>P.Product).ToListAsync();
+                if (purchases.Count > 0)
+                {
+                    foreach(Purchase purchase in purchases)
+                    {
+                        purchase.Product = null;
+                        _purchaseRepository.Update(purchase);
+                    }
+                }
+                _productRepository.Delete(product);
+                if(product.TbnImg != null)
+                {
+                    _imageService.DeleteImage(product.TbnImg.ID, product.ID);
+                }
+                if(product.Gallery != null)
+                {
+                    _imageService.DeleteGallery(product.Gallery.ID, product.ID);
+                }
+            }
+            else
+            {
+                return NotFound("seller do not contains this product");
+            }
+
+            
+                return Ok();
         }
 
     }
