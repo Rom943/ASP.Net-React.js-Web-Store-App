@@ -26,7 +26,7 @@ Sellers showcase their products, and customers can explore, purchase, and provid
 ### Seller Features
 
 1. **Manage Products:**
-   - Sellers can effortlessly add new products and update existing inventory items.
+   - Sellers can effortlessly add new products, update existing products and delete the products.
 
 2. **View Sales and Reviews:**
    - Access sales data and customer reviews to make informed decisions about product performance.
