@@ -115,5 +115,5 @@ Sellers showcase their products, and customers can explore, purchase, and provid
 5. Leave reviews: On the product page, leave a review and rate the product from 0 to 5 stars. The product rank will be recalculated after each review.
 
 
-## hope you injoy this project as much as i building it.
+## hope you injoy this project as much as I building it.
 ## email for contact: roma19943@gmail.com
